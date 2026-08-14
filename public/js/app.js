@@ -3,12 +3,22 @@ import { haptic, initTelegram } from './telegram.js';
 
 const root = document.querySelector('#app');
 const tabs = [
-  ['home', '⌂', 'Сегодня'], ['chat', '✦', 'AI'], ['quran', '☪', 'Коран'], ['dua', '♡', 'Дуа'], ['knowledge', '✧', 'Знания'], ['settings', '⚙', 'Настройки'],
+  ['home', 'Сегодня'], ['chat', 'Помощник'], ['quran', 'Коран'], ['dua', 'Дуа'], ['knowledge', 'Знания'], ['settings', 'Настройки'],
 ];
 const state = { active: 'home', user: null, prayers: null, surahs: [], favourites: [] };
 const escape = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
 const card = (content, extra = '') => `<section class="glass surface card ${extra}">${content}</section>`;
-const methodNames = { 1: 'Карачи', 2: 'ISNA', 3: 'Мусульманская всемирная лига', 4: 'Умм аль-Кура', 5: 'Египетское управление', 13: 'Диянет Турции', 14: 'ДУМ России', 15: 'Moonsighting Committee' };
+let revealObserver;
+
+function reveal(scope = document) {
+  const items = [...scope.querySelectorAll('.card:not(.reveal)')];
+  if (!items.length) return;
+  if (!('IntersectionObserver' in window)) { items.forEach((item) => item.classList.add('reveal', 'is-visible')); return; }
+  revealObserver ||= new IntersectionObserver((entries) => entries.forEach((entry) => {
+    if (entry.isIntersecting) { entry.target.classList.add('is-visible'); revealObserver.unobserve(entry.target); }
+  }), { threshold: 0.08 });
+  items.forEach((item) => { item.classList.add('reveal'); revealObserver.observe(item); });
+}
 
 function bindTabs() {
   document.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => {
@@ -17,8 +27,9 @@ function bindTabs() {
 }
 
 function shell(content) {
-  root.innerHTML = `<header class="glass surface topbar"><div><h1 class="brand">Свет Веры</h1><div class="subtitle">Исламские знания рядом</div></div><span class="city-mark">${escape(state.user?.city || 'Москва')}</span></header><main id="view" class="view">${content}</main><nav class="glass surface nav" aria-label="Основная навигация">${tabs.map(([id, icon, title]) => `<button class="glass surface nav-item ${state.active === id ? 'active' : ''}" data-tab="${id}" aria-label="${title}"><b>${icon}</b>${title}</button>`).join('')}</nav>`;
+  root.innerHTML = `<header class="glass surface topbar"><div><h1 class="brand">Свет Веры</h1><div class="subtitle">Исламские знания рядом</div></div><span class="city-mark">${escape(state.user?.city || 'Москва')}</span></header><main id="view" class="view">${content}</main><nav class="glass surface nav" aria-label="Основная навигация">${tabs.map(([id, title]) => `<button class="glass nav-item ${state.active === id ? 'active' : ''}" data-tab="${id}" aria-label="${title}">${title}</button>`).join('')}</nav>`;
   bindTabs();
+  reveal(root);
 }
 
 function timeEntries(timings) {
@@ -32,8 +43,7 @@ async function home() {
     const entries = timeEntries(data.timings);
     const now = new Date().toLocaleTimeString('en-GB', { timeZone: data.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
     const next = entries.find(([, time]) => time > now) || entries[0];
-    const method = methodNames[data.calculationMethod] || 'выбранный метод';
-    shell(`${card(`<div class="eyebrow">${escape(data.city)} · ${escape(data.date)}</div><div class="prayer-time">${next[1]}</div><div class="prayer-name">Следующий намаз: ${next[0]}</div><div class="divider"></div><div class="schedule">${entries.map(([name, time]) => `<div><span>${name}</span><b>${time}</b></div>`).join('')}</div><div class="source-line"><span>Источник: ${escape(data.source)}</span><span>${escape(method)}</span></div>`, 'prayer-hero')}${card(`<h3>Точное расписание</h3><p class="muted">Время рассчитывается для выбранных города, школы и метода. Сверьте метод с расписанием вашей мечети.</p><button class="glass surface action" data-tab="settings">Настроить метод расчёта</button>`)}${card(`<button class="glass surface action gold" data-tab="chat">✦ Задать вопрос AI-помощнику</button>`)} `);
+    shell(`${card(`<div class="eyebrow">${escape(data.city)} · ${escape(data.date)}</div><div class="prayer-time">${next[1]}</div><div class="prayer-name">Следующий намаз: ${next[0]}</div><div class="divider"></div><div class="schedule">${entries.map(([name, time]) => `<div><span>${name}</span><b>${time}</b></div>`).join('')}</div><div class="source-line"><span>Источник: ${escape(data.source)}</span><span>Единый стандарт MWL</span></div>`, 'prayer-hero')}${card(`<h3>О расписании</h3><p class="muted">Расчёт использует единый стандарт MWL и стандартное время Асра. Меняются только город и часовой пояс.</p><button class="glass surface action" data-tab="settings">Изменить город и часовой пояс</button>`)}${card(`<button class="glass surface action gold" data-tab="chat">Задать вопрос помощнику</button>`)} `);
   } catch (error) {
     shell(card(`<h2>Не удалось получить время намаза</h2><p class="error">${escape(error.message)}</p><button class="glass surface action" id="retry-home">Повторить</button>`));
     document.querySelector('#retry-home').onclick = home;
@@ -68,7 +78,7 @@ async function showSura(id) {
   shell(card('<p class="muted">Загружаем аяты…</p>'));
   try {
     const data = await api(`/quran/${id}`);
-    shell(`${card(`<button class="glass surface action" id="back-quran">← Все суры</button><h2>${escape(data.nameRu)}</h2><p class="arabic">${escape(data.name)}</p><button class="glass surface action gold" id="favourite-sura">Добавить в избранное</button>`)}${data.ayahs.map((ayah) => card(`<div class="row"><b>Аят ${ayah.number}</b><button class="glass surface action" data-ayat="${ayah.number}">☆</button></div><p class="arabic">${escape(ayah.textAr)}</p><p>${escape(ayah.textRu)}</p>`)).join('')}`);
+    shell(`${card(`<button class="glass surface action" id="back-quran">← Все суры</button><h2>${escape(data.nameRu)}</h2><p class="arabic">${escape(data.name)}</p><button class="glass surface action gold" id="favourite-sura">Добавить в избранное</button>`)}${data.ayahs.map((ayah) => card(`<div class="row"><b>Аят ${ayah.number}</b><button class="glass surface action" data-ayat="${ayah.number}">Сохранить</button></div><p class="arabic">${escape(ayah.textAr)}</p><p>${escape(ayah.textRu)}</p>`)).join('')}`);
     document.querySelector('#back-quran').onclick = quran; document.querySelector('#favourite-sura').onclick = () => favourite(id);
     document.querySelectorAll('[data-ayat]').forEach((button) => { button.onclick = () => favourite(id, Number(button.dataset.ayat)); });
   } catch (error) { shell(card(`<p class="error">${escape(error.message)}</p><button class="glass surface action" id="back-quran">← Назад</button>`)); document.querySelector('#back-quran').onclick = quran; }
@@ -116,12 +126,10 @@ function choiceMenu(name, label, options, selected) {
 }
 
 function settings() {
-  const user = state.user || {}; const school = user.school || 'hanafi'; const language = user.language || 'ru'; const theme = user.theme || 'dark'; const method = String(user.calculation_method || '3'); const timezone = user.timezone || 'Europe/Moscow';
-  const schools = [['hanafi', 'Ханафи'], ['maliki', 'Малики'], ['shafii', 'Шафии'], ['hanbali', 'Ханбали']];
+  const user = state.user || {}; const language = user.language || 'ru'; const theme = user.theme || 'dark'; const timezone = user.timezone || 'Europe/Moscow';
   const languages = [['ru', 'Русский'], ['en', 'English']]; const themes = [['dark', 'Тёмная'], ['light', 'Светлая']];
-  const methods = [['14', 'ДУМ России'], ['3', 'Мусульманская всемирная лига'], ['5', 'Египетское управление'], ['4', 'Умм аль-Кура'], ['1', 'Карачи'], ['13', 'Диянет Турции'], ['15', 'Moonsighting Committee']];
   const timezones = [['Europe/Moscow', 'Москва · UTC+3'], ['Europe/Kazan', 'Казань · UTC+3'], ['Asia/Yekaterinburg', 'Екатеринбург · UTC+5'], ['Asia/Novosibirsk', 'Новосибирск · UTC+7'], ['Asia/Tashkent', 'Ташкент · UTC+5'], ['Asia/Dubai', 'Дубай · UTC+4']];
-  shell(card(`<h2>Настройки</h2><form id="settings-form" class="choice-grid"><label class="setting-label">Город<input class="glass surface input" name="city" value="${escape(user.city || 'Moscow')}" required></label><label class="setting-label">Страна<input class="glass surface input" name="country" value="${escape(user.country || 'Russia')}" required></label>${choiceMenu('school', 'Школа', schools, school)}${choiceMenu('calculation_method', 'Метод расчёта времени', methods, method)}<p class="notice">Метод определяет расчёт Фаджра и Иша. Для максимальной точности выбирайте метод, используемый вашей мечетью.</p>${choiceMenu('language', 'Язык', languages, language)}${choiceMenu('theme', 'Тема', themes, theme)}${choiceMenu('timezone', 'Часовой пояс', timezones, timezone)}<label class="glass surface row switch-row">Напоминания о намазах<input class="switch" type="checkbox" name="notifications_enabled" ${user.notifications_enabled ? 'checked' : ''}></label><button class="glass surface action gold">Сохранить настройки</button><p id="settings-status" class="muted" aria-live="polite"></p></form>`));
+  shell(card(`<h2>Настройки</h2><form id="settings-form" class="choice-grid"><label class="setting-label">Город<input class="glass surface input" name="city" value="${escape(user.city || 'Moscow')}" required></label><label class="setting-label">Страна<input class="glass surface input" name="country" value="${escape(user.country || 'Russia')}" required></label><p class="notice">Для всех пользователей применяется единый стандарт расчёта: Мусульманская всемирная лига (MWL) и стандартное время Асра.</p>${choiceMenu('language', 'Язык', languages, language)}${choiceMenu('theme', 'Тема', themes, theme)}${choiceMenu('timezone', 'Часовой пояс', timezones, timezone)}<label class="glass surface row switch-row">Напоминания о намазах<input class="switch" type="checkbox" name="notifications_enabled" ${user.notifications_enabled ? 'checked' : ''}></label><button class="glass surface action gold">Сохранить настройки</button><p id="settings-status" class="muted" aria-live="polite"></p></form>`));
   document.querySelectorAll('[data-choice]').forEach((button) => { button.onclick = () => { const { choice, value, label } = button.dataset; const input = document.querySelector(`input[name="${choice}"]`); input.value = value; document.querySelector(`[data-current="${choice}"]`).textContent = label; document.querySelectorAll(`[data-choice="${choice}"]`).forEach((item) => item.classList.toggle('selected', item === button)); button.closest('details').open = false; }; });
   document.querySelector('#settings-form').onsubmit = async (event) => { event.preventDefault(); const form = event.currentTarget; const values = Object.fromEntries(new FormData(form)); values.notifications_enabled = form.notifications_enabled.checked ? 1 : 0; const status = document.querySelector('#settings-status'); try { state.user = (await api('/settings', { method: 'PATCH', body: JSON.stringify(values) })).user; status.textContent = 'Настройки сохранены. Новое расписание будет рассчитано при открытии главной.'; } catch (error) { status.textContent = error.message; } };
 }

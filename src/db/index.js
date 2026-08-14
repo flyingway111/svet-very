@@ -8,7 +8,6 @@ mkdirSync(dirname(config.databasePath), { recursive: true });
 export const db = new DatabaseSync(config.databasePath);
 db.exec(readFileSync(new URL('./schema.sql', import.meta.url), 'utf8'));
 
-const userColumns = db.prepare('PRAGMA table_info(users)').all().map(({ name }) => name);
-if (!userColumns.includes('calculation_method')) {
-  db.exec("ALTER TABLE users ADD COLUMN calculation_method TEXT NOT NULL DEFAULT '3'");
+if (db.prepare('PRAGMA user_version').get().user_version < 3) {
+  db.exec('DELETE FROM prayer_times; PRAGMA user_version = 3');
 }
