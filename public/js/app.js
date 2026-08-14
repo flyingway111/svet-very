@@ -20,9 +20,11 @@ const state = {
   surahs: [],
   favourites: [],
   duaItems: [],
-  myDua: [],
   duaQuery: '',
   duaCategory: 'Все',
+  knowledgeItems: [],
+  knowledgeQuery: '',
+  knowledgeCategory: 'Все',
   scroll: {},
 };
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -398,35 +400,21 @@ function duaPage() {
       <div id="dua-categories" class="filter-strip" aria-label="Категории дуа"></div>
       <p id="dua-result" class="result-copy" aria-live="polite"></p>
     </section>
-    <section id="dua-list" class="dua-list" aria-live="polite" aria-busy="true"><div class="sura-skeleton"></div><div class="sura-skeleton"></div></section>
-    <section class="personal-dua" data-reveal>
-      <div><p class="kicker">Своё дуа</p><h2>Сохраните важные для себя слова.</h2></div>
-      <form id="dua-form" class="compact-form">
-        <label><span>Название</span><input name="title" maxlength="120" required placeholder="Например, о семье"></label>
-        <label><span>Арабский текст <em>необязательно</em></span><textarea name="text_ar" placeholder="Арабский текст"></textarea></label>
-        <label><span>Русский текст</span><textarea name="text_ru" required placeholder="Текст дуа"></textarea></label>
-        <button class="button button-primary" type="submit">Добавить в моё</button>
-        <p id="dua-status" class="form-status" aria-live="polite"></p>
-      </form>
-      <div id="my-dua-list" class="my-dua-list"></div>
-    </section>`;
+    <section id="dua-list" class="dua-list" aria-live="polite" aria-busy="true"><div class="sura-skeleton"></div><div class="sura-skeleton"></div></section>`;
 }
 
 async function mountDua(token) {
   try {
-    const [common, mine] = await Promise.all([api('/dua'), api('/my-dua')]);
+    const common = await api('/dua');
     if (!isCurrent(token, 'dua')) return;
     state.duaItems = common.items;
-    state.myDua = mine.items;
     state.duaCategory = 'Все';
     state.duaQuery = '';
     drawDua();
-    drawMyDua();
     root.querySelector('#dua-search')?.addEventListener('input', (event) => {
       state.duaQuery = event.target.value;
       drawDua();
     });
-    root.querySelector('#dua-form')?.addEventListener('submit', (event) => submitDua(event, token));
   } catch (error) {
     if (!isCurrent(token, 'dua')) return;
     root.querySelector('#dua-list').innerHTML = `<p class="error-copy">${escape(error.message)}</p>`;
@@ -454,44 +442,14 @@ function drawDua() {
   reveal(list);
 }
 
-function drawMyDua() {
-  const target = root.querySelector('#my-dua-list');
-  if (!target) return;
-  target.innerHTML = state.myDua.map((item) => `<article class="my-dua-entry">
-      <h3>${escape(item.title)}</h3>${item.text_ar ? `<p class="arabic-copy" lang="ar" dir="rtl">${escape(item.text_ar)}</p>` : ''}<p>${escape(item.text_ru)}</p>
-    </article>`).join('') || '<p class="empty-copy">Пока здесь пусто.</p>';
-}
-
-async function submitDua(event, token) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const status = root.querySelector('#dua-status');
-  const button = form.querySelector('button[type="submit"]');
-  const values = Object.fromEntries(new FormData(form));
-  button.disabled = true;
-  button.classList.add('is-loading');
-  try {
-    const response = await api('/my-dua', { method: 'POST', body: JSON.stringify(values) });
-    if (!isCurrent(token, 'dua')) return;
-    state.myDua.unshift(response.item);
-    form.reset();
-    drawMyDua();
-    status.textContent = 'Дуа сохранено.';
-    showToast('Дуа добавлено');
-    haptic();
-  } catch (error) {
-    if (isCurrent(token, 'dua')) status.textContent = error.message;
-  } finally {
-    if (isCurrent(token, 'dua')) {
-      button.disabled = false;
-      button.classList.remove('is-loading');
-    }
-  }
-}
-
 function knowledgePage() {
-  return `${pageIntro('Спокойное изучение', 'Знания', 'Короткие тексты, которые удобно читать в своём темпе.')}
+  return `${pageIntro('Спокойное изучение', 'Знания', 'Большая библиотека коротких объяснений: находите тему по слову или категории.')}
     <section class="knowledge-lead" data-reveal><p>Материалы созданы для первого знакомства с темой. По сложным вопросам лучше обращаться к надёжным учёным и преподавателям.</p></section>
+    <section class="dua-search-zone" data-reveal>
+      <label class="search-field"><span class="sr-only">Поиск знаний</span><input id="knowledge-search" type="search" placeholder="Найти тему: намаз, пост, семья…"></label>
+      <div id="knowledge-categories" class="filter-strip" aria-label="Категории знаний"></div>
+      <p id="knowledge-result" class="result-copy" aria-live="polite"></p>
+    </section>
     <section id="knowledge-list" class="knowledge-list" aria-busy="true"><div class="sura-skeleton"></div><div class="sura-skeleton"></div></section>`;
 }
 
@@ -499,17 +457,37 @@ async function mountKnowledge(token) {
   try {
     const data = await api('/knowledge');
     if (!isCurrent(token, 'knowledge')) return;
-    const target = root.querySelector('#knowledge-list');
-    target.removeAttribute('aria-busy');
-    target.innerHTML = data.items.map((item, index) => `<article class="knowledge-entry" data-reveal>
-        <span class="knowledge-index">${String(index + 1).padStart(2, '0')}</span>
-        <div><p class="kicker">${escape(item.category)}</p><h2>${escape(item.title)}</h2><p>${escape(item.text)}</p></div>
-      </article>`).join('');
-    reveal(target);
+    state.knowledgeItems = data.items;
+    state.knowledgeQuery = '';
+    state.knowledgeCategory = 'Все';
+    drawKnowledge();
+    root.querySelector('#knowledge-search')?.addEventListener('input', (event) => {
+      state.knowledgeQuery = event.target.value;
+      drawKnowledge();
+    });
   } catch (error) {
     if (!isCurrent(token, 'knowledge')) return;
     root.querySelector('#knowledge-list').innerHTML = `<p class="error-copy">${escape(error.message)}</p>`;
   }
+}
+
+function drawKnowledge() {
+  const target = root.querySelector('#knowledge-list');
+  if (!target || !state.knowledgeItems.length) return;
+  const query = state.knowledgeQuery.trim().toLowerCase();
+  const categories = ['Все', ...new Set(state.knowledgeItems.map((item) => item.category))];
+  const items = state.knowledgeItems.filter((item) => {
+    const source = `${item.category} ${item.title} ${item.text}`.toLowerCase();
+    return (state.knowledgeCategory === 'Все' || item.category === state.knowledgeCategory) && source.includes(query);
+  });
+  root.querySelector('#knowledge-categories').innerHTML = categories.map((category) => `<button type="button" class="filter-chip ${state.knowledgeCategory === category ? 'is-active' : ''}" data-action="filter-knowledge" data-category="${escape(category)}" aria-pressed="${state.knowledgeCategory === category}">${escape(category)}</button>`).join('');
+  root.querySelector('#knowledge-result').textContent = items.length ? `Найдено материалов: ${items.length}` : 'Ничего не найдено';
+  target.removeAttribute('aria-busy');
+  target.innerHTML = items.map((item, index) => `<article class="knowledge-entry" data-reveal>
+        <span class="knowledge-index">${String(index + 1).padStart(2, '0')}</span>
+        <div><p class="kicker">${escape(item.category)}</p><h2>${escape(item.title)}</h2><p>${escape(item.text)}</p></div>
+      </article>`).join('') || '<p class="empty-copy">Попробуйте другое слово или категорию.</p>';
+  reveal(target);
 }
 
 function choiceMenu(name, label, options, selected, helper = '') {
@@ -685,6 +663,7 @@ function onRootClick(event) {
   if (action.dataset.action === 'open-sura') go('sura', { suraId: Number(action.dataset.sura) });
   if (action.dataset.action === 'toggle-favourite') toggleFavourite(action);
   if (action.dataset.action === 'filter-dua') { state.duaCategory = action.dataset.category; drawDua(); }
+  if (action.dataset.action === 'filter-knowledge') { state.knowledgeCategory = action.dataset.category; drawKnowledge(); }
   if (action.dataset.action === 'choose-setting') chooseSetting(action);
   if (action.dataset.action === 'suggest-question') {
     const input = root.querySelector('#chat-message');
