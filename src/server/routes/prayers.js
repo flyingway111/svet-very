@@ -8,6 +8,8 @@ function schoolValue(school) {
   return school === 'hanafi' ? 1 : 0;
 }
 
+const supportedMethods = new Set(['1', '2', '3', '4', '5', '13', '14', '15']);
+
 async function loadTimings(user, date) {
   const cached = getPrayerTimes(user.telegram_id, date);
   if (cached) return cached;
@@ -15,7 +17,7 @@ async function loadTimings(user, date) {
   const params = new URLSearchParams({
     city: user.city,
     country: user.country,
-    method: '2',
+    method: supportedMethods.has(String(user.calculation_method)) ? String(user.calculation_method) : '3',
     school: String(schoolValue(user.school)),
   });
   const response = await fetch(`https://api.aladhan.com/v1/timingsByCity/${date}?${params}`);
@@ -32,10 +34,10 @@ prayersRouter.get('/today', async (req, res, next) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Некорректная дата.' });
   try {
     const timings = await loadTimings(user, date);
-    return res.json({ date, city: user.city, timezone: user.timezone, timings });
+    return res.json({ date, city: user.city, timezone: user.timezone, calculationMethod: user.calculation_method || '3', source: 'AlAdhan', timings });
   } catch (error) {
     const cached = getPrayerTimes(user.telegram_id, date);
-    if (cached) return res.json({ date, city: user.city, timezone: user.timezone, timings: cached, cached: true });
+    if (cached) return res.json({ date, city: user.city, timezone: user.timezone, calculationMethod: user.calculation_method || '3', source: 'AlAdhan', timings: cached, cached: true });
     return next(error);
   }
 });

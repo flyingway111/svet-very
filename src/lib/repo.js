@@ -1,7 +1,7 @@
 import { db } from '../db/index.js';
 
 const defaultUser = {
-  city: 'Moscow', country: 'Russia', school: 'hanafi', language: 'ru', theme: 'dark',
+  city: 'Moscow', country: 'Russia', school: 'hanafi', calculation_method: '3', language: 'ru', theme: 'dark',
   timezone: 'Europe/Moscow', notifications_enabled: 0,
 };
 
@@ -27,12 +27,15 @@ export function getUser(telegramId) {
 }
 
 export function updateUserSettings(telegramId, settings) {
-  const allowed = ['city', 'country', 'school', 'language', 'theme', 'timezone', 'notifications_enabled'];
+  const allowed = ['city', 'country', 'school', 'calculation_method', 'language', 'theme', 'timezone', 'notifications_enabled'];
   const entries = Object.entries(settings).filter(([key]) => allowed.includes(key));
   if (!entries.length) return getUser(telegramId);
   const setClause = entries.map(([key]) => `${key} = ?`).join(', ');
   db.prepare(`UPDATE users SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE telegram_id = ?`)
     .run(...entries.map(([, value]) => value), telegramId);
+  if (entries.some(([key]) => ['city', 'country', 'school', 'calculation_method', 'timezone'].includes(key))) {
+    db.prepare('DELETE FROM prayer_times WHERE user_id = ?').run(telegramId);
+  }
   return getUser(telegramId);
 }
 

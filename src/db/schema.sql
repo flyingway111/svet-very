@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   city TEXT NOT NULL DEFAULT 'Moscow',
   country TEXT NOT NULL DEFAULT 'Russia',
   school TEXT NOT NULL DEFAULT 'hanafi',
+  calculation_method TEXT NOT NULL DEFAULT '3',
   language TEXT NOT NULL DEFAULT 'ru',
   theme TEXT NOT NULL DEFAULT 'dark',
   timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
