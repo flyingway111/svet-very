@@ -141,14 +141,13 @@ body[data-theme="light"] .ambient span:nth-child(1) { background: radial-gradien
   overflow: hidden;
   background: var(--stage-bg);
   border: 1px solid rgba(205, 235, 217, .16);
-  border-radius: 30px 30px 8px 30px;
+  border-radius: 30px;
   box-shadow: 0 24px 54px rgba(0,0,0,.18);
 }
 body[data-theme="light"] .prayer-stage { --stage-bg: #f8f4e7; color: #19372c; border-color: rgba(65, 94, 71, .18); box-shadow: 0 24px 54px rgba(53, 76, 61, .11); }
-.prayer-stage::before { position: absolute; z-index: 0; top: 42px; right: 52px; width: 3px; height: 3px; background: rgba(247, 230, 170, .9); border-radius: 50%; box-shadow: -48px 31px 0 -1px rgba(247,230,170,.6), -88px -8px 0 -1px rgba(247,230,170,.42), 46px 68px 0 -1px rgba(247,230,170,.45), -20px 87px 0 -1px rgba(247,230,170,.48); content: ""; animation: starlight 4s ease-in-out infinite alternate; }
-.prayer-stage::after { display: none; }
-.stage-aurora { position: absolute; z-index: 0; top: -27px; right: 30px; width: 150px; height: 150px; overflow: hidden; background: linear-gradient(135deg, #fff8d9 8%, #f5d27a 55%, #c68e31 100%); border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,244,204,.42), 0 0 34px rgba(240,193,87,.26); transform: rotate(-16deg); animation: moon-sway 7s var(--ease-out) infinite alternate; }
-.stage-aurora::after { position: absolute; top: -15px; left: 37px; width: 143px; height: 143px; background: var(--stage-bg); border-radius: 50%; content: ""; box-shadow: -7px 10px 24px color-mix(in srgb, var(--stage-bg), transparent 40%); }
+.prayer-stage::before, .prayer-stage::after { display: none; }
+.stage-aurora { position: absolute; z-index: 0; right: -5px; bottom: -8px; width: min(62%, 254px); aspect-ratio: 1; background: url('/assets/mosque-crescent.jpg') center / contain no-repeat; filter: invert(1) sepia(.48) saturate(1.25) hue-rotate(347deg) brightness(1.1); mix-blend-mode: screen; opacity: .2; transform-origin: 66% 78%; animation: mosque-float 8s var(--ease-out) infinite alternate; }
+.stage-aurora::after { display: none; }
 .prayer-stage-top, .prayer-stage-copy, .prayer-rail, .prayer-source { position: relative; z-index: 1; }
 .prayer-stage-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .stage-caption { margin: 0; color: rgba(237, 246, 240, .57); font-size: 12px; }
@@ -163,12 +162,12 @@ body[data-theme="light"] .prayer-stage { --stage-bg: #f8f4e7; color: #19372c; bo
 .prayer-stop time { color: rgba(237, 246, 240, .9); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .prayer-stop.is-next span, .prayer-stop.is-next time { color: var(--amber); }
 .prayer-source { display: flex; justify-content: space-between; gap: 12px; align-self: end; margin-top: 18px; color: rgba(237, 246, 240, .44); font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+body[data-theme="light"] .stage-aurora { filter: sepia(.7) saturate(.8) hue-rotate(347deg); mix-blend-mode: multiply; opacity: .14; }
 body[data-theme="light"] .prayer-stage .stage-caption, body[data-theme="light"] .prayer-stage .stage-subtitle, body[data-theme="light"] .prayer-stage .quiet-button, body[data-theme="light"] .prayer-stage .prayer-stop, body[data-theme="light"] .prayer-stage .prayer-source { color: rgba(25,55,44,.6); }
 body[data-theme="light"] .prayer-stage .prayer-time, body[data-theme="light"] .prayer-stage .prayer-stop time { color: #19372c; }
 body[data-theme="light"] .prayer-stage .prayer-rail { border-color: rgba(25,55,44,.17); }
 body[data-theme="light"] .prayer-stage .prayer-stop.is-next span, body[data-theme="light"] .prayer-stage .prayer-stop.is-next time { color: #966810; }
-@keyframes moon-sway { 0% { transform: rotate(-18deg) translate3d(0, 0, 0); } 100% { transform: rotate(-10deg) translate3d(-8px, 10px, 0); } }
-@keyframes starlight { 0% { opacity: .35; transform: scale(.85); } 100% { opacity: .9; transform: scale(1); } }
+@keyframes mosque-float { 0% { transform: translate3d(0, 0, 0) rotate(-1.5deg); } 100% { transform: translate3d(-7px, -8px, 0) rotate(1.5deg); } }
 .stage-error { display: block; min-height: 308px; }
 .stage-error .prayer-stage-copy { padding-top: 20px; }
 .stage-error h1 { max-width: 10ch; margin-top: 12px; color: #f7fbf8; font-size: 35px; }
@@ -186,7 +185,7 @@ body[data-theme="light"] .prayer-stage .prayer-stop.is-next span, body[data-them
 .home-brief h2, .assistant-invite h2, .personal-dua h2 { font-size: clamp(25px, 6.6vw, 35px); }
 .home-brief > p { max-width: 59ch; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
 .text-action { min-height: 44px; text-align: left; }
-.panel { position: relative; padding: 24px; overflow: hidden; background: var(--surface); border: 1px solid var(--stroke); border-radius: 11px 28px 28px 28px; }
+.panel { position: relative; padding: 24px; overflow: hidden; background: var(--surface); border: 1px solid var(--stroke); border-radius: 28px; }
 .assistant-panel { background: linear-gradient(130deg, var(--surface-raised), var(--surface)); }
 .assistant-panel::after { position: absolute; top: -75px; right: -65px; width: 170px; height: 170px; border: 1px solid rgba(231,190,106,.26); border-radius: 50%; content: ""; }
 .assistant-invite { position: relative; z-index: 1; display: grid; gap: 20px; max-width: 480px; }
@@ -312,7 +311,7 @@ body[data-theme="light"] .message.user { color: #113a2c; }
   align-items: center;
   gap: 5px;
   width: auto;
-  min-height: 58px;
+  min-height: 70px;
   padding: 6px;
   overflow: clip;
   background: color-mix(in srgb, #102019, transparent 6%);
@@ -322,8 +321,8 @@ body[data-theme="light"] .message.user { color: #113a2c; }
   transform: translateX(-50%);
 }
 body[data-theme="light"] .bottom-nav { background: rgba(255,255,255,.94); border-color: rgba(36,70,54,.15); box-shadow: 0 16px 38px rgba(37,62,48,.15), inset 0 1px 0 rgba(255,255,255,.8); }
-.nav-indicator { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 0; width: var(--nav-width, 0px); background: color-mix(in srgb, var(--jade), transparent 82%); border: 1px solid color-mix(in srgb, var(--jade), transparent 72%); border-radius: 13px; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--jade), white 28%); transform: translate3d(var(--nav-x, 0px), 0, 0); transition: transform .44s var(--ease-out), width .44s var(--ease-out), opacity .2s ease; }.has-no-active .nav-indicator { opacity: 0; }
-.nav-link { position: relative; z-index: 1; display: grid; flex: 0 0 46px; place-items: center; width: 46px; min-width: 46px; height: 46px; padding: 0; color: var(--subtle); background: transparent; border-radius: 13px; transition: color .28s var(--ease-out), transform .16s ease, opacity .2s ease; }.nav-link.is-active { color: var(--jade); }.nav-link:hover { color: var(--text); }.nav-icon { display: grid; place-items: center; width: 20px; height: 20px; }.nav-icon svg { width: 20px; height: 20px; overflow: visible; }
+.nav-indicator { position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 0; width: var(--nav-width, 0px); background: color-mix(in srgb, var(--jade), transparent 72%); border: 1px solid color-mix(in srgb, var(--jade), transparent 58%); border-radius: 14px; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--jade), white 28%), 0 5px 13px rgba(0,0,0,.08); transform: translate3d(var(--nav-x, 0px), 0, 0); transition: transform .44s var(--ease-out), width .44s var(--ease-out), opacity .2s ease; }.has-no-active .nav-indicator { opacity: 0; }
+.nav-link { position: relative; z-index: 1; display: grid; grid-template-rows: 22px 11px; flex: 0 0 52px; place-items: center; gap: 3px; width: 52px; min-width: 52px; height: 58px; padding: 5px 0 4px; color: var(--subtle); background: transparent; border-radius: 14px; transition: color .28s var(--ease-out), transform .16s ease, opacity .2s ease; }.nav-link.is-active { color: var(--jade); }.nav-link:hover { color: var(--text); }.nav-icon { display: grid; place-items: center; width: 21px; height: 21px; }.nav-icon svg { width: 21px; height: 21px; overflow: visible; }.nav-link.is-active .nav-icon { transform: translateY(-1px) scale(1.06); }.nav-label { display: block; max-width: 50px; overflow: hidden; font-size: 8px; font-weight: 800; letter-spacing: -.045em; line-height: 1; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .toast { position: fixed; z-index: 30; bottom: calc(90px + env(safe-area-inset-bottom)); left: 50%; width: max-content; max-width: min(90vw, 390px); margin: 0; padding: 11px 15px; color: #eff8f2; background: #163d2e; border: 1px solid rgba(189,232,209,.24); border-radius: 999px; box-shadow: 0 12px 28px rgba(0,0,0,.22); font-size: 12px; font-weight: 750; text-align: center; transform: translate(-50%, 14px); opacity: 0; pointer-events: none; transition: opacity .24s ease, transform .24s var(--ease-out); }.toast.is-visible { transform: translate(-50%, 0); opacity: 1; }.toast.is-danger { color: #3b1510; background: var(--danger); border-color: transparent; }
 
 .reveal-ready { opacity: 0; transform: translateY(13px); transition: opacity .48s var(--ease-out) var(--reveal-delay, 0ms), transform .48s var(--ease-out) var(--reveal-delay, 0ms); }.reveal-ready.is-revealed { opacity: 1; transform: translateY(0); }
@@ -336,7 +335,7 @@ body[data-theme="light"] .bottom-nav { background: rgba(255,255,255,.94); border
   .prayer-stop time { font-size: 11px; }
   .prayer-stop span { font-size: 8px; }
   .bottom-nav { width: auto; border-radius: 17px; }
-  .nav-link { flex-basis: 43px; width: 43px; min-width: 43px; height: 43px; }
+  .nav-link { flex-basis: 49px; width: 49px; min-width: 49px; height: 58px; }
   .nav-icon, .nav-icon svg { width: 19px; height: 19px; }
 }
 @media (min-width: 720px) {
