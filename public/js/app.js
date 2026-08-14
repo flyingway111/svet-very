@@ -33,6 +33,17 @@ const escape = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
 }[char]));
 
+function dockIcon(id) {
+  const paths = {
+    home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10Z"/><path d="M9 21v-6h6v6"/>',
+    chat: '<path d="M20 15a3 3 0 0 1-3 3H9l-5 3V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7Z"/><path d="M8 11h8"/>',
+    quran: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v17h5.5A2.5 2.5 0 0 1 20 22V5.5Z"/>',
+    dua: '<path d="M12 3v7"/><path d="M8.5 7.5 12 11l3.5-3.5"/><path d="M5 13.5c1.5 4.7 4 7.5 7 7.5s5.5-2.8 7-7.5"/><path d="M7 14.5c.5 1.8 1.4 3.5 2.8 4.8M17 14.5c-.5 1.8-1.4 3.5-2.8 4.8"/>',
+    knowledge: '<path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H12v17H7.5A2.5 2.5 0 0 0 5 21V4.5Z"/><path d="M19 4.5A2.5 2.5 0 0 0 16.5 2H12v17h4.5A2.5 2.5 0 0 1 19 21V4.5Z"/><path d="m12 5 1.2 2.6L16 8.1l-2 2 .5 2.9-2.5-1.4-2.5 1.4.5-2.9-2-2 2.8-.5L12 5Z"/>',
+  };
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[id]}</svg>`;
+}
+
 function cityName(city) {
   return cityNames[city] || city || 'Москва';
 }
@@ -69,7 +80,7 @@ function buildFrame() {
       <main id="view" class="page-view" tabindex="-1"></main>
       <nav id="bottom-nav" class="bottom-nav" aria-label="Основные разделы">
         <span class="nav-indicator" aria-hidden="true"></span>
-        ${tabs.map(([id, label]) => `<button type="button" class="nav-link" data-route="${id}" aria-label="${label}"><span>${label}</span></button>`).join('')}
+        ${tabs.map(([id, label]) => `<button type="button" class="nav-link" data-route="${id}" aria-label="${label}" title="${label}"><span class="nav-icon">${dockIcon(id)}</span><span class="sr-only">${label}</span></button>`).join('')}
       </nav>
       <p id="toast" class="toast" role="status" aria-live="polite"></p>
     </div>`;
@@ -100,8 +111,16 @@ function trackScroll() {
   });
 }
 
+function applyTheme(theme) {
+  const resolved = theme === 'light' ? 'light' : 'dark';
+  document.body.dataset.theme = resolved;
+  root.dataset.theme = resolved;
+  document.documentElement.style.colorScheme = resolved;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolved === 'light' ? '#f5f3ec' : '#08110e');
+}
+
 function syncChrome() {
-  document.body.dataset.theme = state.user?.theme === 'light' ? 'light' : 'dark';
+  applyTheme(state.user?.theme);
   const city = cityName(state.user?.city);
   root.querySelector('#header-city').textContent = city;
   root.querySelector('#header-date').textContent = dateLabel();
@@ -647,6 +666,7 @@ function chooseSetting(button) {
   input.value = value;
   root.querySelector(`[data-current="${setting}"]`).textContent = label;
   root.querySelectorAll(`[data-setting="${setting}"]`).forEach((option) => option.classList.toggle('is-selected', option === button));
+  if (setting === 'theme') applyTheme(value);
   button.closest('details').open = false;
 }
 
