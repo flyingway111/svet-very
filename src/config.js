@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-const requiredInProduction = ['BOT_TOKEN', 'WEBAPP_URL'];
+const requiredInProduction = ['BOT_TOKEN'];
 
 export const config = {
   botToken: process.env.BOT_TOKEN || '',
